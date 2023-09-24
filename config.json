@@ -1,0 +1,47 @@
+{
+  "forecast_interval_minutes": 15,
+  "colors": {
+    "0": {
+      "name": "Zero rain",
+      "rgb": [
+        207,
+        52,
+        44
+      ]
+    },
+    "10": {
+      "name": "Light rain",
+      "rgb": [
+        0,
+        157,
+        255
+      ]
+    },
+    "15": {
+      "name": "Moderate rain",
+      "rgb": [
+        0,
+        157,
+        255
+      ]
+    },
+    "20": {
+      "name": "Heavy rain",
+      "rgb": [
+        0,
+        157,
+        255
+      ]
+    },
+    "25": {
+      "name": "Very heavy rain",
+      "rgb": [
+        0,
+        157,
+        255
+      ]
+    }
+  },
+  "latitude": 30.0,
+  "longitude": 4.6118
+}
