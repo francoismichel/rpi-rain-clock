@@ -6,7 +6,7 @@ import datetime
 from gpiozero import RGBLED
 
 def new_led(pins: str):
-    pins = [float(x.strip()) for x in pins.split(",")]
+    pins = [int(x.strip()) for x in pins.split(",")]
     return RGBLED(red=pins[0], green=pins[1], blue=pins[2])
 
 lln_lat = 50.66829
