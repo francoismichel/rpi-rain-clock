@@ -102,7 +102,7 @@ def update_leds_mock(config_url):
 def set_leds_colors(leds_colors_rgb):
     leds_colors_rgb = leds_colors_rgb[:4]
     for i, color_rgb in enumerate(leds_colors_rgb):
-        LEDS[i].color = color_rgb
+        LEDS[i].color = [color/255 for color in color_rgb]
         
 def update_leds(config_url):
     config = get_config(config_url)
