@@ -3,6 +3,12 @@ import os
 import json
 import datetime
 
+from gpiozero import RGBLED
+
+def new_led(pins: str):
+    pins = [float(x.strip()) for x in pins.split(",")]
+    return RGBLED(red=pins[0], green=pins[1], blue=pins[2])
+
 lln_lat = 50.66829
 lln_long = 4.61443
 interval_minutes = 15
@@ -12,7 +18,15 @@ config_server_url = "http://localhost:5000/config"
 cache_file = ".weatherpi_cache.json"
 cache_expiration_seconds = 3600
 
-LEDS = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+MOCK_LEDS = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+
+LEDS = [
+    new_led(os.getenv("RASPBERRY_RAIN_PINS_LED_0")),
+    new_led(os.getenv("RASPBERRY_RAIN_PINS_LED_1")),
+    new_led(os.getenv("RASPBERRY_RAIN_PINS_LED_2")),
+    new_led(os.getenv("RASPBERRY_RAIN_PINS_LED_3")),
+]
+
 
 def get_dbz_intervals(long, lat, interval, api_key, ms_client_id):
     """ Returns a dbz measures for several intervals of `interval` minutes from now"""
@@ -74,7 +88,7 @@ def find_color(colors, dbz):
 def set_leds_colors_mock(leds_colors_rgb):
     leds_colors_rgb = leds_colors_rgb[:4]
     for i, color_rgb in enumerate(leds_colors_rgb):
-        LEDS[i] = color_rgb
+        MOCK_LEDS[i] = color_rgb
 
 def update_leds_mock(config_url):
     config = get_config(config_url)
@@ -85,9 +99,22 @@ def update_leds_mock(config_url):
     colors_rgb = [find_color(config["colors"], measure["dbz"]) for measure in measures]
     set_leds_colors_mock(colors_rgb)
 
+def set_leds_colors(leds_colors_rgb):
+    leds_colors_rgb = leds_colors_rgb[:4]
+    for i, color_rgb in enumerate(leds_colors_rgb):
+        LEDS[i].color = color_rgb
+        
+def update_leds(config_url):
+    config = get_config(config_url)
+    measures = get_and_refresh_dbz_measures(config["longitude"], config["latitude"], 
+                                            config["forecast_interval_minutes"],
+                                            os.getenv("RASPBERRY_RAIN_WEATHER_API_KEY"), os.getenv("RASPBERRY_RAIN_WEATHER_MS_ID"),
+                                            cache_expiration_seconds)
+    colors_rgb = [find_color(config["colors"], measure["dbz"]) for measure in measures]
+    set_leds_colors(colors_rgb)
+
+
 
 if __name__ == "__main__":
     config = get_config(config_server_url)
-    print("leds before:", LEDS)
-    update_leds_mock(config_server_url)
-    print("leds after:", LEDS)
+    update_leds(config_server_url)
