@@ -31,9 +31,9 @@
                       {% endfor %}
                   </div>
                     <div class="mb-3">
-                      <span  class="form-label">Coordinates</label>
-                      <input id="latitude-select" name="latitude-select" type="number" class="form-control" value="{{config['latitude']}}" aria-label="Default select example">
-                      <input id="longitude-select" name="longitude-select" type="number" class="form-control" value="{{config['longitude']}}" aria-label="Default select example">
+                      <span  class="form-label">Coordinates (latitude, longitude)</label>
+                      <input id="latitude-select" name="latitude-select" type="number" step="any" class="form-control" value="{{config['latitude']}}">
+                      <input id="longitude-select" name="longitude-select" type="number" step="any" class="form-control" value="{{config['longitude']}}">
 
                     
                     </div>

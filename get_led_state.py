@@ -1,3 +1,4 @@
+import time
 import requests
 import os
 import json
@@ -60,20 +61,21 @@ def get_config(url):
     config = r.json()
     return config
 
-def get_and_refresh_dbz_measures(long, lat, interval, api_key, ms_client_id, cache_expiration_seconds):
-    cache = None
+def get_and_refresh_dbz_measures(long, lat, interval, api_key, ms_client_id, cache_expiration_seconds, config):
+    cache = {}
     cache_age = None
     if os.path.exists(cache_file):
         with open(cache_file) as f:
             cache = json.load(f)
-            cache_age = (datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat(cache[0]["timestamp"])).total_seconds()
-    if cache is not None and cache_age < cache_expiration_seconds:
-        return cache
+            cache_age = (datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat(cache["intervals"][0]["timestamp"])).total_seconds()
+    same_config = config == cache.get("config", None)
+    if cache and same_config and cache_age < cache_expiration_seconds:
+        return cache["intervals"]
     intervals = get_dbz_intervals(long, lat, interval, api_key, ms_client_id)
     with open(cache_file, "w") as f:
-        json.dump(intervals, f)
+        json.dump({ "config": config, "intervals": intervals }, f)
     return intervals
-        
+
 def find_color(colors, dbz):
     """ We find the color to display for the measured `dbz` value. The `colors` dict
         indicates which color to display for threshold dbz values. The color to
@@ -84,6 +86,7 @@ def find_color(colors, dbz):
         if dbz <= k:
             # we found the intensity category, so let's return the color
             return colors_with_float_keys[k]["rgb"]
+    return colors_with_float_keys[max(colors_with_float_keys.keys())]["rgb"]
 
 def set_leds_colors_mock(leds_colors_rgb):
     leds_colors_rgb = leds_colors_rgb[:4]
@@ -95,7 +98,7 @@ def update_leds_mock(config_url):
     measures = get_and_refresh_dbz_measures(config["longitude"], config["latitude"], 
                                             config["forecast_interval_minutes"],
                                             os.getenv("RASPBERRY_RAIN_WEATHER_API_KEY"), os.getenv("RASPBERRY_RAIN_WEATHER_MS_ID"),
-                                            cache_expiration_seconds)
+                                            cache_expiration_seconds, config)
     colors_rgb = [find_color(config["colors"], measure["dbz"]) for measure in measures]
     set_leds_colors_mock(colors_rgb)
 
@@ -109,12 +112,15 @@ def update_leds(config_url):
     measures = get_and_refresh_dbz_measures(config["longitude"], config["latitude"], 
                                             config["forecast_interval_minutes"],
                                             os.getenv("RASPBERRY_RAIN_WEATHER_API_KEY"), os.getenv("RASPBERRY_RAIN_WEATHER_MS_ID"),
-                                            cache_expiration_seconds)
+                                            cache_expiration_seconds, config)
     colors_rgb = [find_color(config["colors"], measure["dbz"]) for measure in measures]
     set_leds_colors(colors_rgb)
 
 
 
 if __name__ == "__main__":
-    config = get_config(config_server_url)
-    update_leds(config_server_url)
+    while True:
+        config = get_config(config_server_url)
+        update_leds(config_server_url)
+        time.sleep(60*15)
+
