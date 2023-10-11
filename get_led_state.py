@@ -62,6 +62,9 @@ def get_config(url):
     return config
 
 def get_and_refresh_dbz_measures(long, lat, interval, api_key, ms_client_id, cache_expiration_seconds, config):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    def filter_intervals(intervals):
+        return [interval for interval in intervals if now <= datetime.datetime.fromisoformat(interval["timestamp"])]
     cache = {}
     cache_age = None
     if os.path.exists(cache_file):
@@ -70,11 +73,13 @@ def get_and_refresh_dbz_measures(long, lat, interval, api_key, ms_client_id, cac
             cache_age = (datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat(cache["intervals"][0]["timestamp"])).total_seconds()
     same_config = config == cache.get("config", None)
     if cache and same_config and cache_age < cache_expiration_seconds:
-        return cache["intervals"]
+        cached_intervals = filter_intervals(cache["intervals"])
+        if len(cached_intervals) >= 4:
+            return cached_intervals
     intervals = get_dbz_intervals(long, lat, interval, api_key, ms_client_id)
     with open(cache_file, "w") as f:
         json.dump({ "config": config, "intervals": intervals }, f)
-    return intervals
+    return filter_intervals(intervals)
 
 def find_color(colors, dbz):
     """ We find the color to display for the measured `dbz` value. The `colors` dict
